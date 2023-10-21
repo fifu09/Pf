@@ -49,6 +49,7 @@
     -- fold (aplica operacion a todos los elementos devolviendo 1)
         -- foldl (+) 0 [8,2,6,10] = 26
         -- foldr (∗) 1 [3,2,5,10] = 300
+        -- foldl1 => es lo mismo que el foldl pero asume que le pasas una lista no vacia
     -- scan (parecido a fold pero devuelve lista con todos los valores
             -- por los que ha pasado para llegar al valor final)
         -- scanl (+) 0 [1..5] => [0,1,3,6,10,15]
