@@ -10,7 +10,7 @@
 ------------------------------------------------------------------
 
 module Calendarios where
-import Data.List ((\\), intercalate)
+import Data.List ((\\))
 
 test1 = ["hola", "hola", "hola", "pepe"]
 
@@ -54,6 +54,7 @@ dibEsCorrecto :: Dibujo -> Bool
 dibEsCorrecto [] = error "Error en dibEsCorrecto => Lista vacia"
 dibEsCorrecto (x : xs)
   | null x = True
+  | null xs = True
   | length xs == 1 = d1 == d2
   | d1 == d2 = dibEsCorrecto xs
   | otherwise = False
@@ -126,8 +127,8 @@ apilar :: [Dibujo] -> Dibujo
 apilar [] = []
 apilar s =
   if listaDibCorrectos s
-    then head s ++ apilar (tail s)
-    else error "Error en apilar => dibujos incorrectos"
+      then foldl1 sobre s
+  else error "Error en apilar => dibujos incorrectos"
 
 ------------------------------------------------------------------
 
@@ -157,17 +158,15 @@ dibBlanco (al,an) = if al>0 && an>0
 -- bloque n lisDib es el dibujo formado al agrupar de n en n los
 --               dibujos de lisDib, extender cada sublista
 --               y luego apilar los resultados.
-difDibujos :: [Dibujo] -> [Dibujo] -> [Dibujo]
-difDibujos l1 l2 = l1 \\ l2
-
 
 testBloque = [["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"]]
 bloque :: Int -> [Dibujo] -> Dibujo
 bloque _ [] = []
-bloque x d = concat (apilar dibujosObtenidos) : bloque x restoDeDibujos
+bloque 0 _ = []
+bloque x d =  fragmento ++ bloque x newD
   where
-    dibujosObtenidos = take x d
-    restoDeDibujos = difDibujos d dibujosObtenidos
+    fragmento =  apilar[extender (take x d)]
+    newD = drop x d
 
 -- otras funciones auxiliares sobre dibujos que se necesiten:
 
@@ -195,7 +194,7 @@ concatenarCadaSiete :: [String] -> [String]
 concatenarCadaSiete xs
     | null xs = []
     | length xs < 7 = [concat xs]
-    | otherwise = concat (take 7 xs ++ dibBlanco(4,1)) : concatenarCadaSiete (drop 7 xs)
+    | otherwise = concat (take 7 xs ++ dibBlanco (4,1)) : concatenarCadaSiete (drop 7 xs)
 
 dibujomes ::(String, Year, Int, Int) -> Dibujo
 dibujomes (nm,a,pd,lm)
@@ -222,8 +221,9 @@ ene1 a = mod (a + div (a - 1) 4 - div (a - 1) 100 + div (a - 1) 400) 7
 -- Ejemplo: pdias 2019 es [2,5,5,1,3,6,1,4,7,2,5,7]
 pdias :: Int -> [Int]
 pdias a = map (pdiasAux a) [1 .. 12]
-
-pdiasAux a 1 = ene1 a
+pdiasAux a 1
+  | ene1 a == 0 = 7
+  | otherwise = ene1 a
 pdiasAux a m
   | mod diasTotales 7 /= 0 = mod diasTotales 7
   | otherwise = 7
@@ -271,7 +271,7 @@ fechas x y
   | otherwise =  blancosInicio ++ fechas ++ blancosFinal
     where
       casosXEspeciales
-        | x == 0 = 7
+        | x == 0 = 6
         | otherwise = x - 1
       blancosInicio = agrouparBlancos (dibBlanco (3,casosXEspeciales))
       blancosFinal = agrouparBlancos (dibBlanco (3,43 - x - length fechas))
