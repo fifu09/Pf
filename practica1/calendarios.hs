@@ -10,8 +10,7 @@
 ------------------------------------------------------------------
 
 module Calendarios where
-import GHC.Float (leDouble)
-import Data.List ((\\))
+import Data.List ((\\), intercalate)
 
 test1 = ["hola", "hola", "hola", "pepe"]
 
@@ -38,12 +37,12 @@ printDibujo dib = do
   (putStr . concat . map (++ "\n")) dib
 
 -- Imprime, con un numero de columnas, el calendario de un a�o:
--- printCalendario :: Columna ->  Year -> IO()
--- printCalendario c a = printDibujo (calendario c a)
+printCalendario :: Columna ->  Year -> IO()
+printCalendario c a = printDibujo (calendario c a)
 
 -- Dibujo de un calendario (en c columnas) de un a�o dado:
--- calendario :: Columna -> Year -> Dibujo
--- calendario c  =  bloque c . map dibujomes . meses
+calendario :: Columna -> Year -> Dibujo
+calendario c  =  bloque c . map dibujomes . meses
 
 ---------------------------------------------------
 --  Define las siguientes funciones sobre dibujos:
@@ -161,19 +160,13 @@ dibBlanco (al,an) = if al>0 && an>0
 difDibujos :: [Dibujo] -> [Dibujo] -> [Dibujo]
 difDibujos l1 l2 = l1 \\ l2
 
-obtenerNElementos :: Int -> [Dibujo] -> [Dibujo]
-obtenerNElementos x d
-  | x == 0 = []
-  | null d = []
-  | otherwise = head d : obtenerNElementos (x-1) (tail d)
 
-testBloque = [["d1", "d2","d3", "d4"], ["d5", "d6", "d7", "d8"], ["d9", "d1", "dA", "dB"]]
+testBloque = [["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"],["ENERO"]]
 bloque :: Int -> [Dibujo] -> Dibujo
-bloque 0 _ = []
 bloque _ [] = []
-bloque x d =  concat (apilar dibujosObtenidos) : [concat (bloque x restoDeDibujos)]
+bloque x d = concat (apilar dibujosObtenidos) : bloque x restoDeDibujos
   where
-    dibujosObtenidos = obtenerNElementos x d
+    dibujosObtenidos = take x d
     restoDeDibujos = difDibujos d dibujosObtenidos
 
 -- otras funciones auxiliares sobre dibujos que se necesiten:
@@ -186,14 +179,33 @@ bloque x d =  concat (apilar dibujosObtenidos) : [concat (bloque x restoDeDibujo
 -- meses n devuelve una lista de 12 elementos con los datos
 --         relevantes de cada uno de los meses del a�o n:
 --         (nombre_mes, n, primer_d�a_mes, longitud_mes)
+meses ::  Year -> [(String, Year, Int, Int)]
+meses n = [(nombre_mes, n, primer_dia_mes, longitud_mes) |
+          (nombre_mes, primer_dia_mes, longitud_mes)
+          <- zip3 nombresmeses (pdias n)
+          [diasMes n nombre_mes | nombre_mes <- [1..12]]]
 
 ------------------------------------------------------------------
 
--- dibujomes ::(String, Year, Int, Int) -> Dibujo
+
 -- dibujomes (nm,a,pd,lm) devuelve un dibujo de dimensiones 10x25
 -- formado por el titulo y la tabla del mes de nombre nm y a�o a.
 -- Necesita como par�metros: pd=primer dia y lm=longitud del mes.
+concatenarCadaSiete :: [String] -> [String]
+concatenarCadaSiete xs
+    | null xs = []
+    | length xs < 7 = [concat xs]
+    | otherwise = concat (take 7 xs ++ dibBlanco(4,1)) : concatenarCadaSiete (drop 7 xs)
 
+dibujomes ::(String, Year, Int, Int) -> Dibujo
+dibujomes (nm,a,pd,lm)
+  | length (cabecera++meses) == 10 = cabecera++meses
+  | otherwise = cabecera++meses++dibBlanco (25,1)
+  where
+    t = " "++ nm ++ " " ++ show a
+    titulo = t ++ concat (dibBlanco (25-length t,1))
+    cabecera = [titulo,concat (dibBlanco (25,1))," Lu Ma Mi Ju Vi Sa Do    "]
+    meses = concatenarCadaSiete (concat (fechas pd lm))
 ------------------------------------------------------------------
 
 ene1 :: Year -> Int
@@ -255,11 +267,15 @@ agrouparBlancos d
 fechas :: Int -> Int -> [Dibujo]
 fechas x y
   | y>31 || x > 7 = error "Error en fechas => datos incoherentes"
+  | x == 1 = fechas ++ blancosFinal
   | otherwise =  blancosInicio ++ fechas ++ blancosFinal
     where
-      blancosInicio = agrouparBlancos (dibBlanco (3,x-1))
+      casosXEspeciales
+        | x == 0 = 7
+        | otherwise = x - 1
+      blancosInicio = agrouparBlancos (dibBlanco (3,casosXEspeciales))
       blancosFinal = agrouparBlancos (dibBlanco (3,43 - x - length fechas))
-      fechas = [["  " ++ show a] | a <- [1..y]]
+      fechas = [["  " ++ show a] | a <- [1..9]]++[[" " ++ show a] | a <- [10..y]]
 {- Ejemplo:
 fechas 3 30
 [["   "],["   "],["  1"],["  2"],["  3"],["  4"],["  5"],
