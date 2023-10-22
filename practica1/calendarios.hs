@@ -62,14 +62,14 @@ dibEsCorrecto (x : xs)
     d1 = length x
     d2 = length (head xs)
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- comprueba que los dibujos de la lista dada son correctos y
 -- ademas tienen todos las mismas dimensiones.
 listaDibCorrectos :: [Dibujo] -> Bool
 listaDibCorrectos = dibEsCorrecto.concat
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- Pre: dib es un dibujo correcto.
 -- alto dib da la altura de dib.
@@ -81,7 +81,7 @@ alto l =
 
 mismaAltura d1 d2 = alto d1 == alto d2
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- Pre: dib es un dibujo correcto.
 -- ancho dib da la anchura de dib.
@@ -93,7 +93,7 @@ ancho (x : xs) =
 
 mismaAnchura d1 d2 = ancho d1 == ancho d2
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- Precondicion: los dibujos d1 y d2 tienen la misma anchura.
 -- sl1obre d1 d2 pone el dibujo d1 sobre el dibujo d2.
@@ -103,7 +103,7 @@ sobre d1 d2 =
     then d1 ++ d2
     else error "Error en sobre => no tienen la misma anchura"
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- Precondicion: los dibujos d1 y d2 tienen la misma altura.
 -- alLado d1 d2 da un dibujo con d1 a la izquierda de d2.
@@ -118,7 +118,7 @@ alLado d1 d2 =
     then alLadoAux d1 d2
     else error "Error en sobre => no tienen la misma altura"
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- apila s da el dibujo obtenido apilando todos los elementos de s
 --         (el primero de s queda en la cima de la pila).
@@ -130,7 +130,7 @@ apilar s =
     then head s ++ apilar (tail s)
     else error "Error en apilar => dibujos incorrectos"
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- extiende s da el dibujo obtenido al extender todos los elementos
 --            de s (el primero de s queda el m�s a la izquierda).
@@ -142,7 +142,7 @@ extender s = if listaDibCorrectos s
   then foldl1 alLado s
   else error "Error en extender => dibujos incorrectos"
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 -- Precondicion: al>0 && an>0.
 -- dibBlanco (al,an) devuelve el dibujo de caracteres blancos con
@@ -152,7 +152,7 @@ dibBlanco (al,an) = if al>0 && an>0
   then [concat [" " | x<-[1..al]] | y<-[1..an]]
   else error "Error en dibBlanco => parametros negativos"
 
-----------------------------------------------------------------------------
+------------------------------------------------------------------
 
 
 -- bloque n lisDib es el dibujo formado al agrupar de n en n los
@@ -187,10 +187,14 @@ bloque x d =  concat (apilar dibujosObtenidos) : [concat (bloque x restoDeDibujo
 --         relevantes de cada uno de los meses del a�o n:
 --         (nombre_mes, n, primer_d�a_mes, longitud_mes)
 
+------------------------------------------------------------------
+
 -- dibujomes ::(String, Year, Int, Int) -> Dibujo
 -- dibujomes (nm,a,pd,lm) devuelve un dibujo de dimensiones 10x25
 -- formado por el titulo y la tabla del mes de nombre nm y a�o a.
 -- Necesita como par�metros: pd=primer dia y lm=longitud del mes.
+
+------------------------------------------------------------------
 
 ene1 :: Year -> Int
 ene1 a = mod (a + div (a - 1) 4 - div (a - 1) 100 + div (a - 1) 400) 7
@@ -198,11 +202,30 @@ ene1 a = mod (a + div (a - 1) 4 - div (a - 1) 100 + div (a - 1) 400) 7
 -- ene1 a devuelve el dia de la semana del 1 de enero del a�o a
 --        siendo 1=lunes, 2=martes, ..., 6=sabado, 0=domingo
 
--- pdias :: Int -> [Int]
+------------------------------------------------------------------
+
 -- pdias a  devuelve una lista con 12 dias que son los dias de la
 --          semana en que comienza cada mes del a�o a siendo
 --          1=lunes, 2=martes, ..., 6=sabado y 7=domingo
 -- Ejemplo: pdias 2019 es [2,5,5,1,3,6,1,4,7,2,5,7]
+pdias :: Int -> [Int]
+pdias a = map (pdiasAux a) [1 .. 12]
+
+pdiasAux a 1 = ene1 a
+pdiasAux a m
+  | mod diasTotales 7 /= 0 = mod diasTotales 7
+  | otherwise = 7
+  where
+    diasTotales = pdiasAux a (m - 1) + diasMes a (m - 1)
+
+diasMes a 2 -- Bisiestos !!
+  | mod a 4 == 0  = 29
+  | otherwise = 28
+diasMes _ m
+  | m == 4 || m == 6 || m == 9 || m == 11 = 30
+  | otherwise = 31
+
+------------------------------------------------------------------
 
 nombresmeses :: [String]
 nombresmeses =
@@ -220,11 +243,23 @@ nombresmeses =
     "Diciembre"
   ]
 
--- fechas :: Int -> Int -> [Dibujo]
+------------------------------------------------------------------
+
 -- fechas pd lm da una lista de 42 dibujos de 1*3 (alguno blanco)
 --              con los dias de un mes cuyo primer dia de semana
 --              es pd y cuya longitud de mes es lm
-
+agrouparBlancos :: Dibujo -> [Dibujo]
+agrouparBlancos d
+  | null d = []
+  | otherwise = [head d]:agrouparBlancos (tail d)
+fechas :: Int -> Int -> [Dibujo]
+fechas x y
+  | y>31 || x > 7 = error "Error en fechas => datos incoherentes"
+  | otherwise =  blancosInicio ++ fechas ++ blancosFinal
+    where
+      blancosInicio = agrouparBlancos (dibBlanco (3,x-1))
+      blancosFinal = agrouparBlancos (dibBlanco (3,43 - x - length fechas))
+      fechas = [["  " ++ show a] | a <- [1..y]]
 {- Ejemplo:
 fechas 3 30
 [["   "],["   "],["  1"],["  2"],["  3"],["  4"],["  5"],
@@ -235,6 +270,8 @@ fechas 3 30
  ["   "],["   "],["   "],["   "],["   "],["   "],["   "]]
 -}
 
+------------------------------------------------------------------
+
 -- otras funciones que se necesiten:
 
---------------------------------------------------------------------
+------------------------------------------------------------------
