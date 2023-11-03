@@ -6,6 +6,7 @@
     -- toEnum 97 devuelva 'a'
     -- show 123 devuelve la cadena "123".
     -- read "123" :: Int convertirá la cadena "123" en el entero 123.
+
     -- toUpper 'a' devuelve 'A'.
     -- toLower 'A' devuelve 'a'.
 -- Recorrer Listas
